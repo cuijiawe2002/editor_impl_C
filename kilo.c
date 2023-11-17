@@ -14,6 +14,13 @@
 
 #define CTRL_KEY(k) ((k) & 0x1f)
 
+enum editorKey {
+	ARROW_LEFT = 1000,
+	ARROW_RIGHT,
+	ARROW_UP,
+	ARROW_DOWN,
+};
+
 /*** data ***/
 
 struct editorConfig {
@@ -57,11 +64,30 @@ void enableRawMode() {
 		die("tcsetattr");
 }
 
-char editorReadKey() {
+int editorReadKey() {
 	char c;
 	if (read(STDIN_FILENO, &c, 1) != 1) 
 		die("read");
-	return c;
+
+	if (c == '\x1b') {
+		char seq[3];
+
+		if (read(STDIN_FILENO, &seq[0], 1) != 1) return '\x1b';
+		if (read(STDIN_FILENO, &seq[1], 1) != 1) return '\x1b';
+
+		if (seq[0] == '[') {
+			switch (seq[1]) {
+				case 'A': return ARROW_UP;
+				case 'B': return ARROW_DOWN;
+				case 'C': return ARROW_RIGHT;
+				case 'D': return ARROW_LEFT;
+			}
+		}
+
+		return '\x1b';
+	} else {
+		return c;
+	}
 }
 
 int getWindowSize(int *rows, int *cols) {
@@ -148,24 +174,24 @@ void editorRefreshScreen() {
 
 /*** input ***/
 
-void editorMoveCursor(char key) {
+void editorMoveCursor(int key) {
 	switch (key) {
-		case 'h':
+		case ARROW_LEFT:
 			if (E.cx != 0) {
 				E.cx--;
 			}
 			break;
-		case 'j':
+		case ARROW_DOWN:
 			if (E.cy != E.screenrows - 1) {
 				E.cy++;
 			}
 			break;
-		case 'k':
+		case ARROW_UP:
 			if (E.cy != 0) {
 				E.cy--;
 			}
 			break;
-		case 'l':
+		case ARROW_RIGHT:
 			if (E.cx != E.screencols - 1) {
 				E.cx++;
 			}
@@ -174,7 +200,7 @@ void editorMoveCursor(char key) {
 }
 
 void editorProcessKeypress() {
-	char c = editorReadKey();
+	int c = editorReadKey();
 
 	switch (c) {
 		case CTRL_KEY('q'):
@@ -183,10 +209,10 @@ void editorProcessKeypress() {
 			exit(0);
 			break;
 
-		case 'h':
-		case 'j':
-		case 'k':
-		case 'l':
+		case ARROW_UP:
+		case ARROW_DOWN:
+		case ARROW_LEFT:
+		case ARROW_RIGHT:
 			editorMoveCursor(c);
 			break;
 	}
