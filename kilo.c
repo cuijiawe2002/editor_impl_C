@@ -148,6 +148,31 @@ void editorRefreshScreen() {
 
 /*** input ***/
 
+void editorMoveCursor(char key) {
+	switch (key) {
+		case 'h':
+			if (E.cx != 0) {
+				E.cx--;
+			}
+			break;
+		case 'j':
+			if (E.cy != E.screenrows - 1) {
+				E.cy++;
+			}
+			break;
+		case 'k':
+			if (E.cy != 0) {
+				E.cy--;
+			}
+			break;
+		case 'l':
+			if (E.cx != E.screencols - 1) {
+				E.cx++;
+			}
+			break;
+	}	
+}
+
 void editorProcessKeypress() {
 	char c = editorReadKey();
 
@@ -156,6 +181,13 @@ void editorProcessKeypress() {
 			write(STDOUT_FILENO, "\x1b[2J", 4);
 			write(STDOUT_FILENO, "\x1b[H", 3);
 			exit(0);
+			break;
+
+		case 'h':
+		case 'j':
+		case 'k':
+		case 'l':
+			editorMoveCursor(c);
 			break;
 	}
 }
